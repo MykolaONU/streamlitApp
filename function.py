@@ -86,47 +86,16 @@ def parse_flare_df(df):
     else:
         return np.nan
 
-def process_pdf(pdf_file):
-    pattern = re.compile(r"^(?P<y>\d{4})(?P<m>\d{2})(?P<d>\d{2})\s+")
-    reader = PdfReader(pdf_file)
-    df_list = []
-
-    for page in reader.pages:
-        text = page.extract_text()
-        for line in text.splitlines():
-            match = pattern.match(line)
-            if match:
-                columns = [
-                    line[0:9],    # ymd
-                    line[9:15],   # to
-                    line[15:20],  # tm
-                    line[20:26],  # te
-                    line[26:35],  # xray/opt
-                    line[35:42],  # L
-                    line[42:53],  # coord
-                    line[53:59],  # AR
-                    line[59:65],  # radio
-                    line[65:72],  # mhr
-                    line[72:77],  # dynamic
-                    line[77:81],  # sweep
-                    line[81:100],  # CME
-                    line[100:124], # xray-hard
-                    line[124:],   # protons
-                ]
-                columns = [col.replace(" ", "") for col in columns]
-                df_list.append(columns)
-
-    df = pd.DataFrame(df_list, columns=[
-        'ymd', 'to', 'tm', 'te', 'xray/opt', 'L', 'coord', 'AR', 'radio', 'mhr', 
-        'dynamic', 'sweep', 'CME', 'xray-hard', 'protons'
-    ])
+def addColumns(df):
     df['date'] = pd.to_datetime(df['ymd'], format='%Y%m%d')
     
     # Convert to timedelta
     df['toTime'] = hhmm_to_timedelta(df['to'])
     df['teTime'] = hhmm_to_timedelta(df['te'])
-    df['tmTime'] = hhmm_to_timedelta(df['tm']).apply(lambda x: f"{int(x.total_seconds() // 3600):02d}:{int((x.total_seconds() % 3600) // 60):02d}")
-
+    df['tmTime'] = hhmm_to_timedelta(df['tm']).apply(
+        lambda x: f"{int(x.total_seconds() // 3600):02d}:{int((x.total_seconds() % 3600) // 60):02d}"
+        if pd.notnull(x) else None
+    )
 
     # Adjust for midnight crossing
     df['teTime'] = df.apply(lambda row: row['teTime'] + pd.Timedelta(hours=24) if row['teTime'] < row['toTime'] else row['teTime'], axis=1)
@@ -138,9 +107,19 @@ def process_pdf(pdf_file):
     df['duration_minutes'] = df['duration'].dt.total_seconds() / 60
 
     # Convert duration to HH:MM format (optional)
-    df['duration_hhmm'] = df['duration'].apply(lambda x: f"{int(x.total_seconds() // 3600):02d}:{int((x.total_seconds() % 3600) // 60):02d}")
-    df['toTime'] = df['toTime'].apply(lambda x: f"{int(x.total_seconds() // 3600):02d}:{int((x.total_seconds() % 3600) // 60):02d}")
-    df['teTime'] = df['teTime'].apply(lambda x: f"{int(x.total_seconds() // 3600):02d}:{int((x.total_seconds() % 3600) // 60):02d}")
+    df['duration_hhmm'] = df['duration'].apply(
+        lambda x: f"{int(x.total_seconds() // 3600):02d}:{int((x.total_seconds() % 3600) // 60):02d}"
+        if pd.notnull(x) else None
+    )
+    df['toTime'] = df['toTime'].apply(
+        lambda x: f"{int(x.total_seconds() // 3600):02d}:{int((x.total_seconds() % 3600) // 60):02d}"
+        if pd.notnull(x) else None
+    )
+
+    df['teTime'] = df['teTime'].apply(
+        lambda x: f"{int(x.total_seconds() // 3600):02d}:{int((x.total_seconds() % 3600) // 60):02d}"
+        if pd.notnull(x) else None
+    )
     # Convert to uppercase
     df['coord'] = df['coord'].str.upper()
     df[['lat', 'lon', 'carrington_Lon', 'lat_hemisphere', 'lon_hemisphere']] = df['coord'].apply(
