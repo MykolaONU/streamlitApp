@@ -3,6 +3,4 @@ pandas
 numpy
 PyPDF2
 openpyxl
-re
-io
 plotly
