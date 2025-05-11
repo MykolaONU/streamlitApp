@@ -35,7 +35,7 @@ def parse_solar_coordinates(coord):
 
         return latitude, longitude, carrington_longitude, lat_hemisphere_name, lon_hemisphere_name
     else:
-        return  np.nan, np.nan, np.nan
+        return  np.nan, np.nan, np.nan, np.nan, np.nan
 
 def parse_flare_df(df):
     # Шаблон для парсинга данных с возможным отсутствием важности и яркости
@@ -84,7 +84,7 @@ def parse_flare_df(df):
         # Возвращаем результаты
         return x_ray_class, peak_flux, importance_str, brightness_str
     else:
-        return np.nan
+        return np.nan,np.nan, np.nan,np.nan
 
 def addColumns(df):
     df['date'] = pd.to_datetime(df['ymd'], format='%Y%m%d')
@@ -121,7 +121,7 @@ def addColumns(df):
         if pd.notnull(x) else None
     )
     # Convert to uppercase
-    df['coord'] = df['coord'].str.upper()
+    df['coord'] = df['coord'].str.upper().astype(str)
     df[['lat', 'lon', 'carrington_Lon', 'lat_hemisphere', 'lon_hemisphere']] = df['coord'].apply(
         lambda x: pd.Series(parse_solar_coordinates(x))
     )

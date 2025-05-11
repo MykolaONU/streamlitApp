@@ -1,30 +1,32 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from function import addColumns
 
 st.title("📊 Графики по солнечным вспышкам")
 
-# Проверяем наличие df
-if "df" not in st.session_state:
-    st.warning("Сначала загрузите и обработайте PDF на главной странице, либо загрузите файл Excel/CSV ниже.")
+# Всегда предлагаем загрузить новый файл
+uploaded_file = st.file_uploader("Загрузите файл Excel или CSV (повторная загрузка перезапишет текущие данные)", type=["xlsx", "csv"])
 
-    uploaded_file = st.file_uploader("Загрузите файл Excel или CSV", type=["xlsx", "csv"])
-    
-    if uploaded_file:
-        try:
-            if uploaded_file.name.endswith(".xlsx"):
-                df = pd.read_excel(uploaded_file)
-            else:
-                df = pd.read_csv(uploaded_file)
-            st.session_state.df = df
-            st.success("Файл успешно загружен.")
-        except Exception as e:
-            st.error(f"Ошибка при загрузке файла: {e}")
-            st.stop()
-    else:
+if uploaded_file:
+    try:
+        if uploaded_file.name.endswith(".xlsx"):
+            df = pd.read_excel(uploaded_file,dtype=str)
+        else:
+            df = pd.read_csv(uploaded_file, dtype=str)
+        st.session_state.df = df
+        st.success("Файл успешно загружен и обработан.")
+    except Exception as e:
+        st.error(f"Ошибка при загрузке файла: {e}")
         st.stop()
 
+# Проверка наличия данных
+if "df" not in st.session_state:
+    st.warning("Сначала загрузите и обработайте PDF на главной странице или Excel/CSV-файл выше.")
+    st.stop()
+
 df = st.session_state.df
+df = addColumns(df)
 
 # Обработка даты
 if "date" in df.columns:
@@ -70,24 +72,25 @@ elif group_by == "Месяцы":
 elif group_by == "Годы":
     filtered_df["group"] = filtered_df["date"].dt.to_period("Y").dt.to_timestamp()
 
-# Группировка и визуализация
+# Гистограмма количества вспышек
 count_by_group = (
     filtered_df.groupby("group")
     .size()
     .reset_index(name="Количество вспышек")
 )
 
-fig = px.bar(count_by_group, x="group", y="Количество вспышек",
-             title=f"Частота солнечных вспышек по {group_by.lower()}")
-st.plotly_chart(fig, use_container_width=True)
+fig_bar = px.bar(count_by_group, x="group", y="Количество вспышек",
+                 title=f"Частота солнечных вспышек по {group_by.lower()}")
+st.plotly_chart(fig_bar, use_container_width=True)
 
-
+# Обработка числовых колонок
 numeric_cols = ["lat", "lon", "brightness", "importance", "peak_flux"]
 for col in numeric_cols:
     if col in df.columns:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-fig = px.scatter(
+# Точечный график с экватором
+fig_scatter = px.scatter(
     filtered_df,
     x="group",
     y="lat",
@@ -98,7 +101,12 @@ fig = px.scatter(
     title="Распределение солнечных вспышек по широте во времени",
     height=600
 )
-fig.add_hline(y=0, line_dash="dash", line_color="gray", annotation_text="Экватор", annotation_position="top left")
-
-fig.update_yaxes(title="Широта (°)", range=[-90, 90])
-st.plotly_chart(fig, use_container_width=True)
+fig_scatter.add_hline(
+    y=0,
+    line_dash="dash",
+    line_color="gray",
+    annotation_text="Экватор",
+    annotation_position="top left"
+)
+fig_scatter.update_yaxes(title="Широта (°)", range=[-90, 90])
+st.plotly_chart(fig_scatter, use_container_width=True)
