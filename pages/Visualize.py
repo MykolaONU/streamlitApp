@@ -3,93 +3,93 @@ import pandas as pd
 import plotly.express as px
 from function import addColumns
 
-st.title("📊 Графики по солнечным вспышкам")
+st.title("📊 Графіки сонячних спалахів")
 
-# Всегда предлагаем загрузить новый файл
-uploaded_file = st.file_uploader("Загрузите файл Excel или CSV (повторная загрузка перезапишет текущие данные)", type=["xlsx", "csv"])
+# Завжди пропонуємо завантажити новий файл
+uploaded_file = st.file_uploader("Завантажте файл Excel або CSV (повторне завантаження перезапише поточні дані)", type=["xlsx", "csv"])
 
 if uploaded_file:
     try:
         if uploaded_file.name.endswith(".xlsx"):
-            df = pd.read_excel(uploaded_file,dtype=str)
+            df = pd.read_excel(uploaded_file, dtype=str)
         else:
             df = pd.read_csv(uploaded_file, dtype=str)
         st.session_state.df = df
-        st.success("Файл успешно загружен и обработан.")
+        st.success("Файл успішно завантажено та оброблено.")
     except Exception as e:
-        st.error(f"Ошибка при загрузке файла: {e}")
+        st.error(f"Помилка при завантаженні файлу: {e}")
         st.stop()
 
-# Проверка наличия данных
+# Перевірка наявності даних
 if "df" not in st.session_state:
-    st.warning("Сначала загрузите и обработайте PDF на главной странице или Excel/CSV-файл выше.")
+    st.warning("Спочатку завантажте та обробіть PDF на головній сторінці або Excel/CSV-файл вище.")
     st.stop()
 
 df = st.session_state.df
 df = addColumns(df)
 
-# Обработка даты
+# Обробка дати
 if "date" in df.columns:
     try:
         df["date"] = pd.to_datetime(df["date"])
     except:
-        st.error("Не удалось преобразовать колонку 'date' в формат даты.")
+        st.error("Не вдалося перетворити стовпець 'date' у формат дати.")
         st.stop()
 else:
-    st.error("Колонка 'date' не найдена.")
+    st.error("Стовпець 'date' не знайдено.")
     st.stop()
 
-# Слайсер по дате
+# Слайдер для вибору діапазону дат
 min_date = df["date"].min().date()
 max_date = df["date"].max().date()
 
 date_range = st.slider(
-    "Выберите диапазон дат",
+    "Оберіть діапазон дат",
     min_value=min_date,
     max_value=max_date,
     value=(min_date, max_date),
     format="YYYY-MM-DD"
 )
 
-# Фильтрация по диапазону
+# Фільтрація за обраним діапазоном
 filtered_df = df[
     (df["date"] >= pd.to_datetime(date_range[0])) &
     (df["date"] <= pd.to_datetime(date_range[1]))
 ]
 
-# Переключатель группировки
+# Перемикач групування
 group_by = st.radio(
-    "Группировать по:",
-    options=["Дни", "Месяцы", "Годы"],
+    "Групувати за:",
+    options=["Дні", "Місяці", "Роки"],
     horizontal=True
 )
 
-# Создание столбца группировки
-if group_by == "Дни":
+# Створення стовпця групування
+if group_by == "Дні":
     filtered_df["group"] = filtered_df["date"].dt.date
-elif group_by == "Месяцы":
+elif group_by == "Місяці":
     filtered_df["group"] = filtered_df["date"].dt.to_period("M").dt.to_timestamp()
-elif group_by == "Годы":
+elif group_by == "Роки":
     filtered_df["group"] = filtered_df["date"].dt.to_period("Y").dt.to_timestamp()
 
-# Гистограмма количества вспышек
+# Стовпчикова діаграма кількості спалахів
 count_by_group = (
     filtered_df.groupby("group")
     .size()
-    .reset_index(name="Количество вспышек")
+    .reset_index(name="Кількість спалахів")
 )
 
-fig_bar = px.bar(count_by_group, x="group", y="Количество вспышек",
-                 title=f"Частота солнечных вспышек по {group_by.lower()}")
+fig_bar = px.bar(count_by_group, x="group", y="Кількість спалахів",
+                 title=f"Частота сонячних спалахів за {group_by.lower()}")
 st.plotly_chart(fig_bar, use_container_width=True)
 
-# Обработка числовых колонок
+# Обробка числових стовпців
 numeric_cols = ["lat", "lon", "brightness", "importance", "peak_flux"]
 for col in numeric_cols:
     if col in df.columns:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-# Точечный график с экватором
+# Точкова діаграма з екватором
 fig_scatter = px.scatter(
     filtered_df,
     x="group",
@@ -98,14 +98,14 @@ fig_scatter = px.scatter(
     size="peak_flux",
     hover_data=["brightness", "importance"],
     labels={"group": "Дата", "lat": "Широта"},
-    title="Распределение солнечных вспышек по широте во времени",
+    title="Розподіл сонячних спалахів за широтою у часі",
     height=600
 )
 fig_scatter.add_hline(
     y=0,
     line_dash="dash",
     line_color="gray",
-    annotation_text="Экватор",
+    annotation_text="Екватор",
     annotation_position="top left"
 )
 fig_scatter.update_yaxes(title="Широта (°)", range=[-90, 90])

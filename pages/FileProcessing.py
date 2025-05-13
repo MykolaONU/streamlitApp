@@ -4,7 +4,8 @@ import streamlit as st
 from PyPDF2 import PdfReader
 from io import BytesIO
 from function import addColumns
-# --- Default slice positions ---
+
+# --- Типові позиції зрізів ---
 default_column_slices = {
     'ymd': (0, 9),
     'to': (9, 15),
@@ -23,13 +24,13 @@ default_column_slices = {
     'protons': (124, None)
 }
 
-# --- Init session state ---
+# --- Ініціалізація session state ---
 if "column_slices" not in st.session_state:
     st.session_state.column_slices = default_column_slices.copy()
 if "selected_column" not in st.session_state:
     st.session_state.selected_column = list(default_column_slices.keys())[0]
 
-# --- Helper to parse PDF into DataFrame ---
+# --- Допоміжна функція: парсинг PDF у DataFrame ---
 def parse_pdf(uploaded_file):
     reader = PdfReader(uploaded_file)
     pattern = re.compile(r"^(?P<y>\d{4})(?P<m>\d{2})(?P<d>\d{2})\s+")
@@ -47,30 +48,30 @@ def parse_pdf(uploaded_file):
     df = pd.DataFrame(data_list, columns=list(st.session_state.column_slices.keys()))
     return addColumns(df)
 
-# --- Sidebar: column editor ---
+# --- Бокова панель: редагування колонок ---
 def show_column_editor():
-    st.sidebar.header("Настройки колонок")
+    st.sidebar.header("Налаштування колонок")
     columns = list(st.session_state.column_slices.keys())
-    selected_column = st.sidebar.selectbox("Выберите колонку", columns, index=columns.index(st.session_state.selected_column))
+    selected_column = st.sidebar.selectbox("Оберіть колонку", columns, index=columns.index(st.session_state.selected_column))
     st.session_state.selected_column = selected_column
 
     col_index = columns.index(selected_column)
     current_start, current_end = st.session_state.column_slices[selected_column]
 
-    # Сохраняем предыдущие значения для сравнения
+    # Зберігаємо попередні значення для порівняння
     prev_start = st.session_state.get(f"{selected_column}_prev_start", current_start)
     prev_end = st.session_state.get(f"{selected_column}_prev_end", current_end if current_end else 0)
 
-    # Инпуты
-    new_start = st.sidebar.number_input("Срез слева", value=current_start, key=f"{selected_column}_start_input")
-    new_end = st.sidebar.number_input("Срез справа (0 = до конца)", value=current_end if current_end else 0, key=f"{selected_column}_end_input")
+    # Поля введення
+    new_start = st.sidebar.number_input("Зсув зліва", value=current_start, key=f"{selected_column}_start_input")
+    new_end = st.sidebar.number_input("Зсув справа (0 = до кінця)", value=current_end if current_end else 0, key=f"{selected_column}_end_input")
 
     updated_end = int(new_end) if new_end != 0 else None
 
-    # Обновляем текущую колонку
+    # Оновлюємо поточну колонку
     st.session_state.column_slices[selected_column] = (int(new_start), updated_end)
 
-    # Обновляем соседей
+    # Оновлюємо сусідні колонки
     if col_index + 1 < len(columns):
         next_col = columns[col_index + 1]
         _, next_end = st.session_state.column_slices[next_col]
@@ -81,35 +82,36 @@ def show_column_editor():
         prev_start_val, _ = st.session_state.column_slices[prev_col]
         st.session_state.column_slices[prev_col] = (prev_start_val, int(new_start))
 
-    # Обновляем сохранённые значения
+    # Зберігаємо попередні значення
     st.session_state[f"{selected_column}_prev_start"] = int(new_start)
     st.session_state[f"{selected_column}_prev_end"] = int(new_end)
 
-    # Если были изменения — перезапуск
+    # Якщо є зміни — перезапуск
     if int(new_start) != prev_start or int(new_end) != prev_end:
         st.rerun()
 
-    if st.sidebar.button("🔄 Сбросить все срезы"):
+    if st.sidebar.button("🔄 Скинути всі зрізи"):
         st.session_state.column_slices = default_column_slices.copy()
         for col in columns:
             st.session_state.pop(f"{col}_prev_start", None)
             st.session_state.pop(f"{col}_prev_end", None)
         st.rerun()
 
-# --- Main UI ---
-st.title("Обработка PDF с данными")
-uploaded_file = st.file_uploader("Загрузите PDF-файл", type="pdf")
+# --- Основний інтерфейс ---
+st.title("Обробка PDF з даними")
+uploaded_file = st.file_uploader("Завантажте PDF-файл", type="pdf")
 
 if uploaded_file:
     df = parse_pdf(uploaded_file)
 
-    if st.toggle("⚙️ Показать настройки срезов", key="show_editor_toggle"):
+    if st.toggle("⚙️ Показати налаштування зрізів", key="show_editor_toggle"):
         show_column_editor()
-    st.success("Предпросмотр обработанных данных:")
+    st.success("Попередній перегляд оброблених даних:")
     st.dataframe(df)
 
-    st.session_state.df = df 
+    st.session_state.df = df
     st.markdown("---")
+
     def to_excel_bytes(dataframe):
         output = BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -117,8 +119,8 @@ if uploaded_file:
         return output.getvalue()
 
     st.download_button(
-        label="📥 Скачать Excel",
+        label="📥 Завантажити Excel",
         data=to_excel_bytes(df),
-        file_name="результат_обработки.xlsx",
+        file_name="результат_обробки.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
