@@ -4,5 +4,4 @@ numpy
 PyPDF2
 openpyxl
 plotly
-numpy
-sklearn
+scikit-learn
