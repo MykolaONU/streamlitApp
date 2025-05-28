@@ -4,3 +4,4 @@ numpy
 PyPDF2
 openpyxl
 plotly
+numpy

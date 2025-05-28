@@ -130,5 +130,6 @@ def addColumns(df):
         lambda x: pd.Series(parse_flare_df(x))
     )
     df['L'] = pd.to_numeric(df['L'], errors='coerce')
-
+    df['isCMEFlare'] = ((df['CME'].str.strip().str.len()>4) & (~df["CME"].isna())).astype(int)
+    df['isProtonFlare'] = ((~df["protons"].isna()) & (df['protons'].str.strip().str.len()>1)).astype(int)
     return df
