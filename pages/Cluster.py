@@ -188,6 +188,13 @@ fig = px.scatter(
     hover_data=["date", "x_ray_class", "peak_flux", "duration_minutes", "L"],
     title=f"{algo}: {feature_cols[0]} vs {feature_cols[1]}",
 )
+fig.add_hline(
+    y=0,
+    line_dash="dash",
+    line_color="gray",
+    annotation_text="Екватор",
+    annotation_position="top left"
+)
 fig.update_layout(height=500)
 fig.update_traces(marker=dict(line=dict(width=1)))
 fig.update_yaxes(title="Широта (°)", range=[-90, 90])
@@ -199,6 +206,7 @@ st.plotly_chart(fig, use_container_width=True)
 # ----------------------------------------------------------------------------
 st.subheader("📑 Статистика по кластерах")
 summary = df_clu.groupby("cluster")[feature_cols].agg(["mean", "std", "count"])
+st.markdown('Клас спалаху - "A": 0, "B": 1, "C": 2, "M": 3, "X": 4')
 st.dataframe(summary)
 score = silhouette_score(X_scaled, df_clu["cluster"])
 st.markdown(f"Silhouette Score: {score:.3f}")

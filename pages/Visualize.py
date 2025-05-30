@@ -124,6 +124,15 @@ fig_all = px.scatter(
     title=f"Широти всіх спалахів",
     **common_params
 )
+
+fig_all.add_hline(
+    y=0,
+    line_dash="dash",
+    line_color="gray",
+    annotation_text="Екватор",
+    annotation_position="top left"
+)
+
 fig_all.update_layout(height=500)
 fig_all.update_yaxes(title="Широта (°)", range=[-90, 90])
 fig_all.update_traces(marker=dict(line=dict(width=1)))
@@ -156,6 +165,14 @@ for hemisphere, group in df_clean.groupby("lat_hemisphere"):
         line=dict(width=2, dash="dot"),
         opacity = 1
     )
+fig_all.add_hline(
+    y=0,
+    line_dash="dash",
+    line_color="gray",
+    annotation_text="Екватор",
+    annotation_position="top left"
+)
+
 fig_all.update_yaxes(title="Широта (°)", range=[-90, 90])
 fig_all.update_traces(marker=dict(line=dict(width=1)))
 st.plotly_chart(fig_all, use_container_width=True)
@@ -197,6 +214,13 @@ if "cycle" in df.columns:
             title=f"Широти всіх спалахів у циклі {cycle}",
             **common_params
         )
+        fig_all.add_hline(
+            y=0,
+            line_dash="dash",
+            line_color="gray",
+            annotation_text="Екватор",
+            annotation_position="top left"
+        )
         fig_all.update_layout(height=500)
         fig_all.update_traces(marker=dict(line=dict(width=1)))
         fig_all.update_yaxes(title="Широта (°)", range=[-90, 90])
@@ -212,6 +236,13 @@ if "cycle" in df.columns:
                 hover_data=["brightness", "importance"],
                 title=f"Широти спалахів класів X і M у циклі {cycle}",
                 **common_params
+            )
+            fig_xm.add_hline(
+                y=0,
+                line_dash="dash",
+                line_color="gray",
+                annotation_text="Екватор",
+                annotation_position="top left"
             )
             fig_xm.update_layout(height=500)
             fig_xm.update_traces(marker=dict(line=dict(width=1)))
@@ -229,6 +260,13 @@ if "cycle" in df.columns:
                 title=f"Широти спалахів з CME у циклі {cycle}",
                 **common_params
             )
+            fig_cme.add_hline(
+                y=0,
+                line_dash="dash",
+                line_color="gray",
+                annotation_text="Екватор",
+                annotation_position="top left"
+            )
             fig_cme.update_layout(height=500)
             fig_cme.update_traces(marker=dict(line=dict(width=1)))
             fig_cme.update_yaxes(title="Широта (°)", range=[-90, 90])
@@ -244,6 +282,13 @@ if "cycle" in df.columns:
                 hover_data=["brightness", "importance", "protons"],
                 title=f"Широти протонних спалахів у циклі {cycle}",
                 **common_params
+            )
+            fig_protons.add_hline(
+                y=0,
+                line_dash="dash",
+                line_color="gray",
+                annotation_text="Екватор",
+                annotation_position="top left"
             )
             fig_protons.update_layout(height=500)
             fig_protons.update_traces(marker=dict(line=dict(width=1)))
@@ -261,6 +306,13 @@ if "cycle" in df.columns:
             hover_data=["date", "brightness", "importance"],
             title=f"Широти всіх спалахів у циклі {cycle}",
             **common_params
+        )
+        fig_all.add_hline(
+            y=0,
+            line_dash="dash",
+            line_color="gray",
+            annotation_text="Екватор",
+            annotation_position="top left"
         )
         fig_all.update_layout(height=500)
         fig_all.update_yaxes(title="Широта (°)", range=[-90, 90])
@@ -294,6 +346,15 @@ if "cycle" in df.columns:
                 line=dict(width=2, dash="dot"),
                 opacity = 1
             )
-
+            fig_all.add_hline(
+                y=0,
+                line_dash="dash",
+                line_color="gray",
+                annotation_text="Екватор",
+                annotation_position="top left"
+            )
+        fig_all.update_layout(height=500)
+        fig_all.update_yaxes(title="Широта (°)", range=[-90, 90])
+        fig_all.update_traces(marker=dict(line=dict(width=1)))
         st.plotly_chart(fig_all, use_container_width=True)
 
