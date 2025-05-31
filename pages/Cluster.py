@@ -188,7 +188,7 @@ fig = px.scatter(
     y='lat',
     color="cluster",
     hover_data=["date", "x_ray_class", "peak_flux", "duration_minutes", "L"],
-    title=f"{algo}: {feature_cols[0]} vs {feature_cols[1]}",
+    title=f"Метод - {algo}",
 )
 fig.add_hline(
     y=0,
