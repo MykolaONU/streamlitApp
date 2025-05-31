@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from io import BytesIO
+
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import (
@@ -216,11 +218,14 @@ st.markdown(f"Silhouette Score: {score:.3f}")
 # ----------------------------------------------------------------------------
 @st.cache_data
 def df_to_excel(df_: pd.DataFrame) -> bytes:
-    return df_.to_excel(index=False).encode("utf-8")
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df_.to_excel(writer, index=False)
+    return output.getvalue()
 
 st.download_button(
-    "💾 Завантажити Excel",
+    label="💾 Завантажити Excel",
     data=df_to_excel(df_clu),
     file_name="clusters.xlsx",
-    mime="text/xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
