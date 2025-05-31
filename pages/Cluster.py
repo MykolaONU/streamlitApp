@@ -115,7 +115,7 @@ with st.sidebar:
         (
             "KMeans",
             "DBSCAN",
-            "Agglomerative",
+            # "Agglomerative",
             "Birch",
         ),
     )
@@ -123,9 +123,9 @@ with st.sidebar:
     # Динамічні параметри
     if algo == "KMeans":
         k = st.number_input("K (кластерів)", 2, 15, 3, 1)
-    elif algo == "Agglomerative":
-        k = st.number_input("Кластерів", 2, 15, 3, 1)
-        linkage = st.selectbox("Linkage", ("ward", "complete", "average", "single"))
+    # elif algo == "Agglomerative":
+    #     k = st.number_input("Кластерів", 2, 15, 3, 1)
+    #     linkage = st.selectbox("Linkage", ("ward", "complete", "average", "single"))
     elif algo == "Birch":
         k = st.number_input("Кластерів", 2, 15, 3, 1)
         threshold = st.slider("threshold", 0.1, 3.0, 0.5, 0.1)
@@ -159,9 +159,9 @@ if algo == "KMeans":
 elif algo == "DBSCAN":
     model = DBSCAN(eps=float(eps), min_samples=int(min_samples))
     labels = model.fit_predict(X_scaled)
-elif algo == "Agglomerative":
-    model = AgglomerativeClustering(n_clusters=int(k), linkage=linkage)
-    labels = model.fit_predict(X_scaled)
+# elif algo == "Agglomerative":
+#     model = AgglomerativeClustering(n_clusters=int(k), linkage=linkage)
+#     labels = model.fit_predict(X_scaled)
 else:  # Birch
     model = Birch(n_clusters=int(k), threshold=threshold)
     labels = model.fit_predict(X_scaled)
