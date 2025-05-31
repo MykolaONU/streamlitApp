@@ -215,12 +215,12 @@ st.markdown(f"Silhouette Score: {score:.3f}")
 # 8️⃣ Завантаження результатів
 # ----------------------------------------------------------------------------
 @st.cache_data
-def df_to_csv(df_: pd.DataFrame) -> bytes:
-    return df_.to_csv(index=False).encode("utf-8")
+def df_to_excel(df_: pd.DataFrame) -> bytes:
+    return df_.to_excel(index=False).encode("utf-8")
 
 st.download_button(
-    "💾 Завантажити CSV",
-    data=df_to_csv(df_clu),
-    file_name="clusters.csv",
-    mime="text/csv",
+    "💾 Завантажити Excel",
+    data=df_to_excel(df_clu),
+    file_name="clusters.xlsx",
+    mime="text/xlsx",
 )

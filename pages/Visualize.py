@@ -137,47 +137,6 @@ fig_all.update_layout(height=500)
 fig_all.update_yaxes(title="Широта (°)", range=[-90, 90])
 fig_all.update_traces(marker=dict(line=dict(width=1)))
 
-# Додаємо лінії тренду для кожної півкулі з формулами
-for hemisphere, group in df_clean.groupby("lat_hemisphere"):
-    group = group.sort_values("date")
-    if len(group) < 2:
-        continue
-
-    # Перетворюємо дату у числовий формат для поліноміальної апроксимації
-    x_numeric = pd.to_numeric(group["date"])
-    y = group["lat"]
-    coef = np.polyfit(x_numeric, y, 1)
-    trend_fn = np.poly1d(coef)
-    # Побудова лінії тренду
-    x_range = np.linspace(x_numeric.min(), x_numeric.max(), 100)
-    y_trend = trend_fn(x_range)
-
-    # Рівняння у форматі: y = a·x + b
-    a, b = coef
-    equation = f"y = {a:.2e}·x + {b:.2f}"
-
-    # Додаємо лінію на графік
-    fig_all.add_scatter(
-        x=pd.to_datetime(x_range),
-        y=y_trend,
-        mode="lines",
-        name=f"Тренд ({hemisphere}): {equation}",
-        line=dict(width=2, dash="dot"),
-        opacity = 1
-    )
-fig_all.add_hline(
-    y=0,
-    line_dash="dash",
-    line_color="gray",
-    annotation_text="Екватор",
-    annotation_position="top left"
-)
-
-fig_all.update_yaxes(title="Широта (°)", range=[-90, 90])
-fig_all.update_traces(marker=dict(line=dict(width=1)))
-st.plotly_chart(fig_all, use_container_width=True)
-
-
 # --- Візуалізація по кожному циклу ---
 if "cycle" in df.columns:
     st.header("🔁 Графіки по кожному циклу")
