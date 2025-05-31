@@ -13,14 +13,26 @@ xray_class_colors = {
         "X": "#e78ac3",  # Рожевий
     }
 
+# --- Вибір змінної для розміру маркерів ---
+st.sidebar.subheader("⚙️ Налаштування маркерів")
+size_options = {
+    "—": None,
+    "Peak Flux": "peak_flux",
+    "Duration":"duration_minutes"
+}
+size_field_label = st.sidebar.selectbox("Поле для розміру маркерів", options=list(size_options.keys()))
+selected_size_field = size_options[size_field_label]
+
 common_params = dict(
-            color="x_ray_class",
-            color_discrete_map=xray_class_colors,
-            category_orders={"x_ray_class": list(xray_class_colors.keys())},
-            # size="peak_flux",
-            opacity=0.7,
-            labels={"lat": "Широта (°)", "date": "Дата", "group": "Дата"},
-        )
+    color="x_ray_class",
+    color_discrete_map=xray_class_colors,
+    category_orders={"x_ray_class": list(xray_class_colors.keys())},
+    opacity=0.7,
+    labels={"lat": "Широта (°)", "date": "Дата", "group": "Дата"},
+)
+
+if selected_size_field:
+    common_params["size"] = selected_size_field
 
 
 st.title("📊 Графіки сонячних спалахів")
@@ -113,8 +125,8 @@ fig_scatter.update_traces(marker=dict(line=dict(width=1)))
 st.plotly_chart(fig_scatter, use_container_width=True)
 
 # Графік 1: Усі спалахи з окремими лініями тренду для кожної півкулі
-df_clean = df[["date", "lat", "x_ray_class", "lat_hemisphere", "brightness", "importance"]].copy()
-df_clean = df_clean.dropna(subset=["date", "lat", "lat_hemisphere"])
+df_clean = df.copy().dropna(subset=["date", "lat", "lat_hemisphere"])
+
 
 fig_all = px.scatter(
     df_clean,
@@ -164,9 +176,11 @@ if "cycle" in df.columns:
             """
         )
 
-        # Графік 1: Усі спалахи
+        # Графік 1: Усі спалахи з окремими лініями тренду для кожної півкулі
+        df_cycle_clean = df_cycle.copy().dropna(subset=["date", "lat", "lat_hemisphere"])
+
         fig_all = px.scatter(
-            df_cycle,
+            df_cycle_clean,
             x="date",
             y="lat",
             hover_data=["date", "brightness", "importance"],
@@ -181,9 +195,49 @@ if "cycle" in df.columns:
             annotation_position="top left"
         )
         fig_all.update_layout(height=500)
-        fig_all.update_traces(marker=dict(line=dict(width=1)))
         fig_all.update_yaxes(title="Широта (°)", range=[-90, 90])
+        fig_all.update_traces(marker=dict(line=dict(width=1)))
+
+        # Додаємо лінії тренду для кожної півкулі з формулами
+        for hemisphere, group in df_cycle_clean.groupby("lat_hemisphere"):
+            group = group.sort_values("date")
+            if len(group) < 2:
+                continue
+
+            # Перетворюємо дату у числовий формат для поліноміальної апроксимації
+            x_numeric = pd.to_numeric(group["date"])
+            y = group["lat"]
+            coef = np.polyfit(x_numeric, y, 1)
+            trend_fn = np.poly1d(coef)
+            # Побудова лінії тренду
+            x_range = np.linspace(x_numeric.min(), x_numeric.max(), 100)
+            y_trend = trend_fn(x_range)
+
+            # Рівняння у форматі: y = a·x + b
+            a, b = coef
+            equation = f"y = {a:.2e}·x + {b:.2f}"
+
+            # Додаємо лінію на графік
+            fig_all.add_scatter(
+                x=pd.to_datetime(x_range),
+                y=y_trend,
+                mode="lines",
+                name=f"Тренд ({hemisphere}): {equation}",
+                line=dict(width=2, dash="dot"),
+                opacity = 1
+            )
+            fig_all.add_hline(
+                y=0,
+                line_dash="dash",
+                line_color="gray",
+                annotation_text="Екватор",
+                annotation_position="top left"
+            )
+        fig_all.update_layout(height=500)
+        fig_all.update_yaxes(title="Широта (°)", range=[-90, 90])
+        fig_all.update_traces(marker=dict(line=dict(width=1)))
         st.plotly_chart(fig_all, use_container_width=True)
+
 
         # Графік 2: Лише X та M класи
         df_class_xm = df_cycle[df_cycle["x_ray_class"].isin(["X", "M"])]
@@ -253,67 +307,3 @@ if "cycle" in df.columns:
             fig_protons.update_traces(marker=dict(line=dict(width=1)))
             fig_protons.update_yaxes(title="Широта (°)", range=[-90, 90])
             st.plotly_chart(fig_protons, use_container_width=True)
-
-        # Графік 1: Усі спалахи з окремими лініями тренду для кожної півкулі
-        df_cycle_clean = df_cycle[["date", "lat", "x_ray_class", "lat_hemisphere", "brightness", "importance"]].copy()
-        df_cycle_clean = df_cycle_clean.dropna(subset=["date", "lat", "lat_hemisphere"])
-
-        fig_all = px.scatter(
-            df_cycle_clean,
-            x="date",
-            y="lat",
-            hover_data=["date", "brightness", "importance"],
-            title=f"Широти всіх спалахів у циклі {cycle}",
-            **common_params
-        )
-        fig_all.add_hline(
-            y=0,
-            line_dash="dash",
-            line_color="gray",
-            annotation_text="Екватор",
-            annotation_position="top left"
-        )
-        fig_all.update_layout(height=500)
-        fig_all.update_yaxes(title="Широта (°)", range=[-90, 90])
-        fig_all.update_traces(marker=dict(line=dict(width=1)))
-
-        # Додаємо лінії тренду для кожної півкулі з формулами
-        for hemisphere, group in df_cycle_clean.groupby("lat_hemisphere"):
-            group = group.sort_values("date")
-            if len(group) < 2:
-                continue
-
-            # Перетворюємо дату у числовий формат для поліноміальної апроксимації
-            x_numeric = pd.to_numeric(group["date"])
-            y = group["lat"]
-            coef = np.polyfit(x_numeric, y, 1)
-            trend_fn = np.poly1d(coef)
-            # Побудова лінії тренду
-            x_range = np.linspace(x_numeric.min(), x_numeric.max(), 100)
-            y_trend = trend_fn(x_range)
-
-            # Рівняння у форматі: y = a·x + b
-            a, b = coef
-            equation = f"y = {a:.2e}·x + {b:.2f}"
-
-            # Додаємо лінію на графік
-            fig_all.add_scatter(
-                x=pd.to_datetime(x_range),
-                y=y_trend,
-                mode="lines",
-                name=f"Тренд ({hemisphere}): {equation}",
-                line=dict(width=2, dash="dot"),
-                opacity = 1
-            )
-            fig_all.add_hline(
-                y=0,
-                line_dash="dash",
-                line_color="gray",
-                annotation_text="Екватор",
-                annotation_position="top left"
-            )
-        fig_all.update_layout(height=500)
-        fig_all.update_yaxes(title="Широта (°)", range=[-90, 90])
-        fig_all.update_traces(marker=dict(line=dict(width=1)))
-        st.plotly_chart(fig_all, use_container_width=True)
-
